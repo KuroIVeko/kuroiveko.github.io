@@ -1,0 +1,32 @@
+baseURL = 'https://blog.suyuri.com'
+languageCode = 'zh-cn'
+title = "Suyurine's Blog"
+theme = "hugo-PaperMod"
+
+[params]
+    env = "production"
+    # 开启个人主页模式
+    [params.homeInfoParams]
+        Title = "你好，我是 Suyurine 👋"
+        Content = "欢迎来到我的技术小屋，这里记录我的折腾日常。"
+
+    # 社交链接
+    [[params.socialIcons]]
+        name = "github"
+        url = "https://github.com/你的用户名"
+
+    # 显示“文章目录”
+    [params.ShowToc]
+        TocOpen = true
+
+# 配置导航栏
+[[menu.main]]
+    identifier = "posts"
+    name = "文章"
+    url = "/posts/"
+    weight = 10
+[[menu.main]]
+    identifier = "archives"
+    name = "归档"
+    url = "/archives/"
+    weight = 20
