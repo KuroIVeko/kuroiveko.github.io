@@ -1,0 +1,33 @@
+name: Deploy Hugo
+on:
+  push:
+    branches:
+      - main  # 确保这和你推送的分支名一致
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true  # 如果你用了 git clone 下载主题，这步很重要
+          fetch-depth: 0
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Build
+        run: hugo --minify
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # 这个不用改，GitHub 会自动处理
+          publish_dir: ./public
+          cname: blog.suyuri.com  # 这里填你的自定义域名
+
+
+
