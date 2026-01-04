@@ -3,30 +3,111 @@ languageCode = 'zh-cn'
 title = "Suyurine's Blog"
 theme = "hugo-PaperMod"
 
+# --- 核心基础设置 ---
+# 开启 CJK (中日韩) 语言支持，否则字数统计会不准
+hasCJKLanguage = true
+# 开启 Emoji 支持
+enableEmoji = true
+# 设置时区
+timeZone = "Asia/Shanghai"
+
+# --- 输出格式配置 (开启搜索功能必须) ---
+[outputs]
+    home = ["HTML", "RSS", "JSON"]
+
+# --- 详细参数配置 ---
 [params]
     env = "production"
-    # 开启个人主页模式
+    description = "Suyurine 的技术折腾笔记"
+    author = "Suyurine"
+    
+    # 默认主题模式 (auto/dark/light)
+    defaultTheme = "auto"
+    # 禁用主题切换按钮 (false = 显示切换开关)
+    disableThemeToggle = false
+
+    # --- 界面增强 ---
+    # 显示面包屑导航 (主页 > 文章 > 标题)
+    ShowBreadCrumbs = true
+    # 显示代码块的复制按钮
+    ShowCodeCopyButtons = true
+    # 显示文章目录 (TOC)
+    ShowToc = true
+    TocOpen = true # 默认展开目录
+    # 显示分享按钮 (微信、微博、推特等)
+    ShowShareButtons = true
+    # 文章列表页是否显示全文封面 (false = 仅在列表左侧显示缩略图，或者不显示)
+    cover.hidden = true 
+
+    # --- 文章元数据 (显示在标题下) ---
+    # 显示字数统计
+    ShowWordCount = true
+    # 显示预计阅读时间
+    ShowReadingTime = true
+    # 显示最后修改时间 (需要 git 信息支持)
+    ShowPostNavLinks = true
+
+    # --- 个人主页模式 (Profile Mode) ---
     [params.homeInfoParams]
         Title = "你好，我是 Suyurine 👋"
         Content = "欢迎来到我的技术小屋，这里记录我的折腾日常。"
 
-    # 社交链接
+    # --- 社交链接 (显示在头像下方) ---
     [[params.socialIcons]]
         name = "github"
         url = "https://github.com/你的用户名"
+    [[params.socialIcons]]
+        name = "bilibili"
+        url = "https://space.bilibili.com/你的ID"
+    [[params.socialIcons]]
+        name = "email"
+        url = "mailto:你的邮箱@example.com"
+    [[params.socialIcons]]
+        name = "rss"
+        url = "/index.xml"
 
-    # 显示“文章目录”
-    [params.ShowToc]
-        TocOpen = true
+    # --- 评论系统 (推荐使用 Giscus，基于 GitHub Discussions) ---
+    # 如果你不想用，就把这段注释掉
+    [params.assets]
+        disableHLJS = false # 开启代码高亮
+    
+    # [params.comments]
+    #    provider = "giscus" 
+    #    giscusConfig = { repo = "...", repoId = "...", category = "...", categoryId = "..." }
 
-# 配置导航栏
-[[menu.main]]
-    identifier = "posts"
-    name = "文章"
-    url = "/posts/"
-    weight = 10
-[[menu.main]]
-    identifier = "archives"
-    name = "归档"
-    url = "/archives/"
-    weight = 20
+# --- 顶部导航栏配置 ---
+[menu]
+    [[menu.main]]
+        identifier = "home"
+        name = "首页"
+        url = "/"
+        weight = 10
+
+    [[menu.main]]
+        identifier = "posts"
+        name = "文章"
+        url = "/posts/"
+        weight = 20
+
+    [[menu.main]]
+        identifier = "archives"
+        name = "归档"
+        url = "/archives/"
+        weight = 30
+
+    [[menu.main]]
+        identifier = "tags"
+        name = "标签"
+        url = "/tags/"
+        weight = 40
+
+    [[menu.main]]
+        identifier = "search"
+        name = "搜索"
+        url = "/search/"
+        weight = 50
+
+# --- 链接结构优化 (可选) ---
+# 让文章链接变成 https://xxx/posts/2024/my-post/ 的格式，更利于 SEO
+# [permalinks]
+#    posts = "/:year/:month/:filename/"
