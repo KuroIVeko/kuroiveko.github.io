@@ -1,6 +1,6 @@
 ---
 title: Docker 容器在透明代理环境下 IPv6 无法被外部访问的问题
-date: 2024-05-20T14:00:00+08:00
+date: 2025-09-20T14:00:00
 draft: false
 tags:
   - Linux开发
