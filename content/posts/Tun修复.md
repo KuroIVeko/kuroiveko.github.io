@@ -6,19 +6,13 @@ tags:
 categories:
   - 教程
 ---
-
-
-## 背景：当“完美”的镜像模式遇到 TUN
-
-最近在折腾 WSL2 的 **Mirrored（镜像网络）** 模式。这个模式本该是完美的：WSL 和 Windows 共享 IP，端口互通，简直是开发者的福音。
-
-然而，当我开启 **Mihomo (Clash内核) 的 TUN 模式**，并把 Docker 容器（比如 Lucky、Alist）放入 **Bridge（虚拟网桥）** 网络后，噩梦开始了：
-
-* **现象**：Mihomo TUN 一开，外部（局域网/宿主机）访问容器端口直接断连。
-* **诡异点**：容器内部访问公网（翻墙）是正常的。
-* **更诡异点**：以前用 Host 模式好好的，一切换到 Bridge 模式就挂。
-
-折腾了一整天，试过改 DNS、改路由表 `route-exclude`、改 `strict-route`，统统无效。最后终于通过 `iptables` 打标找到了**终极解法**。
+**前言**
+>最近在折腾 WSL2 的 **Mirrored（镜像网络）** 模式。这个模式本该是完美的：WSL 和 Windows 共享 IP，端口互通，简直是开发者的福音。
+>然而，当我开启 **Mihomo (Clash内核) 的 TUN 模式**，并把 Docker 容器（比如 Lucky、Alist）放入 **Bridge（虚拟网桥）** 网络后，噩梦开始了：
+>* **现象**：Mihomo TUN 一开，外部（局域网/宿主机）访问容器端口直接断连。
+>* **诡异点**：容器内部访问公网（翻墙）是正常的。
+>* **更诡异点**：以前用 Host 模式好好的，一切换到 Bridge 模式就挂。
+>折腾了一整天，试过改 DNS、改路由表 `route-exclude`、改 `strict-route`，统统无效。最后终于通过 `iptables` 打标找到了**终极解法**。
 
 ## 根本原因：Mihomo 的“强盗逻辑”与 Docker 的“身份危机”
 
