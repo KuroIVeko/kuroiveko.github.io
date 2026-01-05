@@ -6,8 +6,6 @@ tags:
 categories: 教程
 draft: "false"
 ---
-
-
 **前言**：
 > 在 Docker 的世界里，IPv6 就像是一个被后妈虐待的孩子。
 > 如果你尝试在自定义 Bridge 网络下开启 IPv6，你大概率会遇到这个极其离谱的现象：

@@ -49,7 +49,7 @@ categories:
 #### 1. 创建脚本
 在 WSL 中执行：
 ```bash
-sudo tee /usr/local/bin/fix-lucky-net.sh <'EOF'
+sudo tee /usr/local/bin/fix-lucky-net.sh <<'EOF'
 #!/bin/bash
 
 # ================= 配置区域 =================
