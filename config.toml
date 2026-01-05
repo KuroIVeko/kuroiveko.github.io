@@ -49,7 +49,7 @@ timeZone = "Asia/Shanghai"
 
     # --- 个人主页模式 (Profile Mode) ---
     [params.homeInfoParams]
-        Title = "你好，我是 Suyurine 👋"
+        Title = "你好👋"
         Content = "欢迎来到我的技术小屋，这里记录我的折腾日常。"
 
     # --- 社交链接 (显示在头像下方) ---
