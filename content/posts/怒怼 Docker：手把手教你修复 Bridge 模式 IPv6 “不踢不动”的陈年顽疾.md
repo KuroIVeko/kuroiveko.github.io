@@ -4,7 +4,7 @@ date: 2025-11-30T04:22:00
 tags:
   - Linux开发
 categories: 教程
-draft: "false"
+draft: false
 ---
 **前言**：
 > 在 Docker 的世界里，IPv6 就像是一个被后妈虐待的孩子。

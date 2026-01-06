@@ -5,6 +5,7 @@ tags:
   - Linux开发
 categories:
   - 教程
+draft: false
 ---
 **前言**
 >最近在折腾 WSL2 的 **Mirrored（镜像网络）** 模式。这个模式本该是完美的：WSL 和 Windows 共享 IP，端口互通，简直是开发者的福音。
