@@ -23,7 +23,6 @@ draft: false
 3. **缺乏保活机制**：Docker 并没有为 Bridge 模式提供稳定的 NDP Proxy 或是保活代理。
 
 **结论**：在 Docker 这种烂网桥环境下，动态邻居发现是不可靠的。
-![屏幕截图 2026-01-05 164623.png](https://img.suyuri.com/my-blog-images/2026/01/05/695b7bd351289.jpeg)
 
 ---
 

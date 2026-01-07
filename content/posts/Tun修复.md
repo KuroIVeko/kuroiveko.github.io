@@ -21,8 +21,8 @@ draft: false
 
 1.  **Mihomo 的 TUN 劫持逻辑**：
     Mihomo 开启 TUN 后，会下发一条极霸道的策略路由（`ip rule`）：
-    > `not from all iif lo lookup 2022`
-    > **翻译**：只要流量不是从 `lo`（本机回环）接口进来的，统统给我进代理隧道。
+     `not from all iif lo lookup 2022`
+     **翻译**：只要流量不是从 `lo`（本机回环）接口进来的，统统给我进代理隧道。
 
 2.  **Docker Bridge 的尴尬**：
     * **Host 模式下**：容器共享宿主机网络，流量被内核视为“本机流量”（近似 `lo` 或 `eth0`），侥幸逃过 Mihomo 的劫持。
