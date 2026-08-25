@@ -73,7 +73,7 @@ singbox      sing-tun Tunnel                               2
 **注意是管理员权限**。开始菜单搜 PowerShell，右键"以管理员身份运行"。
 
 然后把下面**一整段**复制进去，回车。
-```powershell
+````powershell
 #requires -RunAsAdministrator
 $Root = "$env:ProgramData\ProxyIcsKick"
 $Worker = Join-Path $Root 'kick.ps1'
@@ -223,11 +223,13 @@ Write-Host "`n[OK] 装好了" -ForegroundColor Green
 Write-Host "[..] 试跑一次，等 40 秒..." -ForegroundColor Cyan
 Start-ScheduledTask -TaskName 'ProxyIcsKick-Boot'; Start-Sleep -Seconds 40
 Get-Content "$Root\kick.log" -Tail 12
-```
+````
+
 
 ### 第三步：看结果
 
 跑完会自动试踢一次。如果你代理正开着，40 秒内应该能看到：
+```text
 [BOOT] 已踢: singbox
 [BOOT] 已踢: singbox
 ```
@@ -241,11 +243,11 @@ Get-Content "$Root\kick.log" -Tail 12
 ## 三、不想要了怎么卸
 
 管理员 PowerShell，三行搞定，删得干干净净：
-```powershell
+````powershell
 Unregister-ScheduledTask -TaskName 'ProxyIcsKick-Boot' -Confirm:$false
 Unregister-ScheduledTask -TaskName 'ProxyIcsKick-Net' -Confirm:$false
 Remove-Item "$env:ProgramData\ProxyIcsKick" -Recurse -Force
-```
+````
 
 不留注册表垃圾，不留后台进程，不留任何痕迹。
 
@@ -254,7 +256,8 @@ Remove-Item "$env:ProgramData\ProxyIcsKick" -Recurse -Force
 ## 四、我踩过的坑（你可以直接绕开）
 
 最开始我图省事，用模糊匹配找网卡，关键词里加了 `wintun` 和 `tunnel`。结果日志给我来了一句：
-2026-08-25 08:21:35  已踢: vgate0
+```text
+2026-08-25 18:21:35  已踢: vgate0
 ```
 
 **踢错人了。**
