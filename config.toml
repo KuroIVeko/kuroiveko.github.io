@@ -1,6 +1,6 @@
 baseURL = 'https://blog.suyuri.com'
 languageCode = 'zh-cn'
-title = "Suyurine's Blog"
+title = "SumiYune's Blog"
 theme = "hugo-PaperMod"
 
 # --- 核心基础设置 ---
@@ -18,8 +18,8 @@ timeZone = "Asia/Shanghai"
 # --- 详细参数配置 ---
 [params]
     env = "production"
-    description = "Suyurine 的技术折腾笔记"
-    author = "Suyurine"
+    description = "SumiYune 的技术折腾笔记"
+    author = "SumiYune"
     
     # 默认主题模式 (auto/dark/light)
     defaultTheme = "auto"
