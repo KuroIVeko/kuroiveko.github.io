@@ -10,8 +10,6 @@ categories:
   - 分享
 ---
 
-  
-
 ## 一、先说说这个破事
 
 你开了 sing-box 或者 mihomo 的 TUN 模式，同时电脑上装了 **OPPO 互联**。然后你发现电脑上的连接数开始疯狂飙升，资源监视器里一堆莫名其妙的局域网连接，风扇嗡嗡响，网也变卡了。
@@ -31,7 +29,7 @@ categories:
 
 别人家的互联是"你好，请问有设备在吗"，OPPO 这个是"你好？你好？你好？你好？你好？你好？"——TUN 网卡那边不回话，它就问到天荒地老。
 
-好在治它的办法有，就是麻烦。所以有了下面这个脚本。
+没办法，OPPO 那边动不了，能动的只有自己这边。所以有了下面这个脚本。
 
 ---
 
@@ -52,7 +50,7 @@ $s.EnumEveryConnection | ForEach-Object {
 
 你会看到类似这样的东西：
 
-```
+```text
 Name         Device                                   Status
 ----         ------                                   ------
 以太网       Realtek PCIe GbE Family Controller            7
@@ -73,7 +71,7 @@ singbox      sing-tun Tunnel                               2
 **注意是管理员权限**。开始菜单搜 PowerShell，右键"以管理员身份运行"。
 
 然后把下面**一整段**复制进去，回车。
-````powershell
+```powershell
 #requires -RunAsAdministrator
 $Root = "$env:ProgramData\ProxyIcsKick"
 $Worker = Join-Path $Root 'kick.ps1'
@@ -95,8 +93,8 @@ $SettleSec     = 3
 $HoldMs        = 1500
 $BootWaitMax   = 300
 $BootPollSec   = 10
-$BootKickTimes = 2
-$BootKickGap   = 20
+$BootKickTimes = 7       # 开机连踢几次
+$BootKickGap   = 10      # 每次间隔秒数（7 次 × 10 秒 ≈ 覆盖 1 分钟）
 # =====================
 
 function Log($m) {
@@ -197,11 +195,11 @@ $t2 = New-ScheduledTaskTrigger -AtLogOn;    $t2.Delay = 'PT30S'; $bootTriggers +
 $bootAction = New-ScheduledTaskAction -Execute $psExe -Argument "$baseArg -Boot"
 $bootSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
   -MultipleInstances IgnoreNew -StartWhenAvailable -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 2) `
-  -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 30)
 
 Register-ScheduledTask -TaskName 'ProxyIcsKick-Boot' -Action $bootAction -Trigger $bootTriggers `
   -Principal $principal -Settings $bootSettings `
-  -Description '开机后等 TUN 就绪，连踢两脚' -Force | Out-Null
+  -Description '开机后等 TUN 就绪，连踢一分钟' -Force | Out-Null
 
 $cls = Get-CimClass -Namespace root/Microsoft/Windows/TaskScheduler -ClassName MSFT_TaskEventTrigger
 $evt = New-CimInstance -CimClass $cls -ClientOnly
@@ -220,44 +218,59 @@ Unregister-ScheduledTask -TaskName 'ProxyIcsKick' -Confirm:$false -ErrorAction S
 
 Remove-Item (Join-Path $Root 'last.stamp') -Force -ErrorAction SilentlyContinue
 Write-Host "`n[OK] 装好了" -ForegroundColor Green
-Write-Host "[..] 试跑一次，等 40 秒..." -ForegroundColor Cyan
-Start-ScheduledTask -TaskName 'ProxyIcsKick-Boot'; Start-Sleep -Seconds 40
-Get-Content "$Root\kick.log" -Tail 12
-````
-
+Write-Host "[..] 试跑一次，大概 90 秒..." -ForegroundColor Cyan
+Start-ScheduledTask -TaskName 'ProxyIcsKick-Boot'; Start-Sleep -Seconds 95
+Get-Content "$Root\kick.log" -Tail 20
+```
 
 ### 第三步：看结果
 
-跑完会自动试踢一次。如果你代理正开着，40 秒内应该能看到：
-```text
-[BOOT] 已踢: singbox
-[BOOT] 已踢: singbox
-```
+跑完会自动试踢一遍。如果你代理正开着，日志里会从「第 1/7 次」一路数到「第 7/7 次」，每次跟一行 `已踢: singbox`，最后以「启动模式完成」收尾。
 
-看到这个就成了，**以后再也不用管**。开机自动踢两下，换 Wi-Fi 自动踢一下，插拔网线自动踢一下。
+看到这个就成了，**以后再也不用管**。开机自动连踢一分钟，换 Wi-Fi 自动踢一下，插拔网线自动踢一下。
 
 如果第一步看到的网卡名和脚本里的 `@('singbox','mihomo')` 对不上，用记事本打开 `C:\ProgramData\ProxyIcsKick\kick.ps1`，改那一行就行，改完立刻生效，不用重装。
 
 ---
 
-## 三、不想要了怎么卸
+## 三、为什么开机要连踢一分钟
+
+最早我只让它踢两下就收工，测试当场是好的。结果用了没多久发现——**过一会儿它又死灰复燃了**。
+
+原因是 OPPO 互联的重试窗口比我想象的长。你踢完，它安静了十几秒，然后自己又重新开始一轮广播，前功尽弃。这种对手你跟它讲道理没用，只能用密度压过去：**每 10 秒踢一次，连踢 7 次，覆盖整整一分钟**，把它整个重试周期焊死在里面。
+
+实测这样它就老实了。
+
+想调的话改 `kick.ps1` 顶部这两个数：
+```powershell
+$BootKickTimes = 7       # 踢几次
+$BootKickGap   = 10      # 间隔几秒
+```
+
+想覆盖 2 分钟就把次数改成 13，以此类推。任务超时上限设的是 30 分钟，随便加。
+
+不过作妖的明明是 OPPO 互联，最后挨踢的却是 singbox。人家 sing-box 老老实实转发流量，什么都没干错，就因为长了一块 TUN 网卡，天天被摁在地上开关 ICS。属于是隔壁邻居半夜蹦迪，物业上门把你家电闸拉了。
+
+---
+
+## 四、不想要了怎么卸
 
 管理员 PowerShell，三行搞定，删得干干净净：
-````powershell
+```powershell
 Unregister-ScheduledTask -TaskName 'ProxyIcsKick-Boot' -Confirm:$false
 Unregister-ScheduledTask -TaskName 'ProxyIcsKick-Net' -Confirm:$false
 Remove-Item "$env:ProgramData\ProxyIcsKick" -Recurse -Force
-````
+```
 
 不留注册表垃圾，不留后台进程，不留任何痕迹。
 
 ---
 
-## 四、我踩过的坑（你可以直接绕开）
+## 五、我踩过的坑（你可以直接绕开）
 
 最开始我图省事，用模糊匹配找网卡，关键词里加了 `wintun` 和 `tunnel`。结果日志给我来了一句：
 ```text
-2026-08-25 18:21:35  已踢: vgate0
+2026-08-25 08:21:35  已踢: vgate0
 ```
 
 **踢错人了。**
@@ -266,11 +279,11 @@ Remove-Item "$env:ProgramData\ProxyIcsKick" -Recurse -Force
 
 Wintun 是个通用的隧道驱动，WireGuard、各种网关客户端都用它，靠驱动名认人纯属自找麻烦。所以现在的版本改成**只认网卡名，而且精确匹配**，多装几个 VPN 也不会误伤。
 
-顺带一提，误踢一次没什么后果，脚本是开了 ICS 立刻关掉，状态会还原。
+顺带一提，误踢一次没什么后果，脚本是开了 ICS 立刻关掉，状态会还原。就是有点对不起 vgate0，它比 singbox 还无辜。
 
 ---
 
-## 五、几个常见疑问
+## 六、几个常见疑问
 
 **Q：重启还在吗？系统更新会不会没？**
 
@@ -278,11 +291,15 @@ Wintun 是个通用的隧道驱动，WireGuard、各种网关客户端都用它�
 
 **Q：会不会一直有个进程挂后台占内存？**
 
-不会。平时是零进程，只有被触发的那十几秒才跑一下 PowerShell，跑完自动退出。
+不会。平时是零进程，只有被触发的时候才跑一下 PowerShell，跑完自动退出。
 
 **Q：会弹 UAC 吗？**
 
 不会。任务以 SYSTEM 身份运行，全程静默，你甚至察觉不到它在干活。
+
+**Q：开机那一分钟会不会卡？**
+
+不会。踢的动作本身就是调一下系统 API，每次一秒多，而且是后台跑的。你正常开机用电脑，全程无感。
 
 **Q：我在网络连接里看到 `192.168.137.1`，是脚本搞的吗？**
 
@@ -301,7 +318,7 @@ Get-NetIPAddress -AddressFamily IPv4 | Where-Object IPAddress -like '192.168.137
 
 `C:\ProgramData\ProxyIcsKick\kick.log`。想看的话：
 ```powershell
-Get-Content "$env:ProgramData\ProxyIcsKick\kick.log" -Tail 20
+Get-Content "$env:ProgramData\ProxyIcsKick\kick.log" -Tail 25
 ```
 
 `[BOOT]` 是开机踢的，`[NET ]` 是网络变化踢的。日志超过 200KB 自动裁剪，不会撑爆硬盘。
@@ -314,16 +331,14 @@ Get-Content "$env:ProgramData\ProxyIcsKick\kick.log" -Tail 20
 
 那说明代理确实没开，正常现象。如果代理明明开着还这么说，说明你的进程名不在识别列表里，`Get-Process | Select ProcessName` 查一下真实进程名，补进 `$ProcPattern` 就行。
 
-**Q：踢了还是有问题？**
+**Q：连踢一分钟还是复燃？**
 
-打开 `kick.ps1`，把 `$BootKickTimes = 2` 改成 `3`，或者把 `$HoldMs = 1500` 改成 `3000`（ICS 开着的时间长一点）。改完立即生效。
+先把 `$BootKickTimes` 拉到 30（覆盖 5 分钟）试试，验证是不是时间窗口的问题。如果拉到 5 分钟还复燃，那说明触发时机根本不在开机附近——比如是你手机连上同一个 Wi-Fi 的那一刻才炸的，这种连踢多久都白搭，得换思路。
 
 ---
 
-## 六、总结
+## 七、总结
 
-一句话：**让 Windows 自己在合适的时机替你去点那两下鼠标。**
+一句话：**让 Windows 自己在合适的时机替你去点那两下鼠标，而且一点就是一分钟。**
 
-开机踢两脚，网络一变再踢一脚，剩下的时间它就安静躺着不占任何资源。装一次，忘掉它。
-
-至于 OPPO 什么时候能修好这个 bug——我建议你还是先用脚本吧。
+开机连踢一分钟，网络一变再踢一脚，剩下的时间它就安静躺着不占任何资源。装一次，忘掉它，至于 OPPO 什么时候能修好这个 bug，我建议你还是先用脚本吧。
