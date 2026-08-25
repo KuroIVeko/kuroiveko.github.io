@@ -1,6 +1,6 @@
 ---
 title: ZRAMod： 一个轻量化的安卓ZRAM自定义模块
-date: 2026-08-25T21:00:00
+date: 2026-08-24T18:00:00
 draft: false
 tags:
   - Android
@@ -183,4 +183,4 @@ echo 100 > /proc/sys/vm/watermark_scale_factor
 
   
 
-仓库地址：`https://github.com/KuroIVeko/ZRAMod`
+仓库地址：**[ZRAMod](https://github.com/KuroIVeko/ZRAMod)**
