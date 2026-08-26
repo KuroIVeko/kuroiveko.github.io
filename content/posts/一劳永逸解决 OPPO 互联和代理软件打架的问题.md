@@ -458,3 +458,548 @@ Get-Content "$env:ProgramData\IcsToggle\toggle.log" -Tail 15
 我绕了六圈才把这两件事弄明白，其中一半时间浪费在凭直觉写 COM 调用顺序上。
 
 至于为什么最后是 singbox 挨揍——毕竟能改的只有自己家的配置，改不了别人家的代码。至于 OPPO 什么时候能修好这个 bug，我建议你还是先用脚本吧。
+
+
+---
+
+  
+
+## 附录：如果你用 Hyper-V
+
+  
+
+**不用虚拟机的可以直接关掉这篇了，下面跟你没关系。**
+
+  
+
+上面那套方案我用得好好的，直到某天我把 Hyper-V 的**外部虚拟交换机**接到了物理网卡上——脚本瞬间失效，连接数照样爆。
+
+  
+
+### 为什么会失效
+
+  
+
+Hyper-V 外部交换机会把物理网卡**整个接管过去**。你原来那块「以太网」不再直接承载主机流量了，主机是通过一块新的虚拟网卡 `vEthernet (交换机名)` 上网的。
+
+  
+
+ICS 那一套还在老老实实地刷 TUN 网卡和 WLAN，可真正出问题的是那块虚拟网卡——**刷了个寂寞**。
+
+  
+
+手动解法我摸出来了：虚拟交换机管理器里，**取消勾选「允许管理操作系统共享此网络适配器」→ 应用 → 再勾回来 → 应用**。这个动作会把主机侧的虚拟网卡销毁重建，比 ICS 那一套彻底得多，一次就好。
+
+  
+
+### 一把梭：虚拟机版完整部署
+
+  
+
+这版是**两步叠加**：先重置虚拟交换机，再做 ICS 开关。没装 Hyper-V 或者没有外部交换机也能跑，那一步会自动跳过。
+
+  
+
+管理员 PowerShell 整段粘贴（覆盖安装，不用先卸载上面那版）：
+
+  
+
+~~~powershell
+
+#requires -RunAsAdministrator
+
+  
+
+Stop-ScheduledTask -TaskName 'IcsToggle' -ErrorAction SilentlyContinue
+
+Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+
+  Where-Object { $_.CommandLine -like '*IcsToggle*' } |
+
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+
+Start-Sleep -Seconds 2
+
+  
+
+$Root = "$env:ProgramData\IcsToggle"
+
+$Worker = Join-Path $Root 'toggle.ps1'
+
+New-Item -ItemType Directory -Path $Root -Force | Out-Null
+
+  
+
+@'
+
+$ErrorActionPreference = 'Stop'
+
+$Root = "$env:ProgramData\IcsToggle"
+
+$Log  = Join-Path $Root 'toggle.log'
+
+  
+
+# ==== 要改就改这里 ====
+
+$PublicNames   = @('singbox','mihomo')  # 公用侧：TUN 网卡名
+
+$PrivateName   = 'WLAN'                 # 专用侧：家庭网络连接
+
+$ProcPattern   = 'sing-box|singbox|mihomo|clash|verge|flclash|karing|nekoray'
+
+$WaitMax       = 300   # 最长等待代理+TUN 就绪的秒数
+
+$PollSec       = 3     # 轮询间隔
+
+$SettleSec     = 1     # 就绪后再晾多久才动手
+
+$HoldSec       = 1     # ICS 打开后保持多久再关
+
+$StepGapSec    = 1     # 各步骤之间的间隔
+
+$DoVSwitch     = $true # 是否处理 Hyper-V 外部虚拟交换机
+
+$DoIcs         = $true # 是否执行 ICS 开关
+
+$VSwitchNames  = @()   # 留空 = 自动处理所有外部交换机；也可指定 @('外部交换机')
+
+$NetRecoverMax = 60    # 重建虚拟网卡后等网络恢复的最长秒数
+
+  
+
+function Log($m) {
+
+  try {
+
+    "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  $m" | Add-Content -Path $Log -Encoding utf8 -ErrorAction Stop
+
+  } catch { }
+
+}
+
+  
+
+try {
+
+  if ((Test-Path $Log) -and (Get-Item $Log).Length -gt 200KB) {
+
+    (Get-Content $Log -Tail 200) | Set-Content $Log -Encoding utf8
+
+  }
+
+} catch { }
+
+  
+
+function Get-Conns([string[]]$names) {
+
+  $share = New-Object -ComObject HNetCfg.HNetShare
+
+  $hits = @()
+
+  foreach ($c in $share.EnumEveryConnection) {
+
+    $p = $share.NetConnectionProps($c)
+
+    if ($names -contains $p.Name) {
+
+      $hits += [pscustomobject]@{ Conn = $c; Name = $p.Name }
+
+    }
+
+  }
+
+  ,$hits
+
+}
+
+  
+
+function Clear-AllSharing {
+
+  $share = New-Object -ComObject HNetCfg.HNetShare
+
+  $did = $false
+
+  foreach ($c in $share.EnumEveryConnection) {
+
+    try {
+
+      $cfg = $share.INetSharingConfigurationForINetConnection($c)
+
+      if ($cfg.SharingEnabled) {
+
+        $n = $share.NetConnectionProps($c).Name
+
+        $cfg.DisableSharing()
+
+        Log "已关闭共享: $n"
+
+        $did = $true
+
+      }
+
+    } catch { }
+
+  }
+
+  return $did
+
+}
+
+  
+
+# 取消 → 恢复「允许管理操作系统共享此网络适配器」
+
+function Reset-VSwitch {
+
+  try { Import-Module Hyper-V -ErrorAction Stop }
+
+  catch { Log "Hyper-V 模块不可用，跳过虚拟交换机步骤"; return $false }
+
+  
+
+  $sws = @(Get-VMSwitch -ErrorAction SilentlyContinue | Where-Object { $_.SwitchType -eq 'External' })
+
+  if ($VSwitchNames.Count -gt 0) {
+
+    $sws = @($sws | Where-Object { $VSwitchNames -contains $_.Name })
+
+  }
+
+  $sws = @($sws | Where-Object { $_.AllowManagementOS })
+
+  if ($sws.Count -eq 0) { Log "没有需要处理的外部虚拟交换机"; return $false }
+
+  
+
+  foreach ($sw in $sws) {
+
+    $vnic = "vEthernet ($($sw.Name))"
+
+    Log "处理虚拟交换机: $($sw.Name)"
+
+  
+
+    $ipBefore = @(Get-NetIPAddress -InterfaceAlias $vnic -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+
+                  Where-Object { $_.IPAddress -notlike '169.254.*' })
+
+    if ($ipBefore) {
+
+      Log "  处理前 IP: $($ipBefore.IPAddress -join ',') (来源: $($ipBefore[0].PrefixOrigin))"
+
+    }
+
+  
+
+    Set-VMSwitch -Name $sw.Name -AllowManagementOS $false
+
+    Log "  已取消勾选"
+
+    Start-Sleep -Seconds $StepGapSec
+
+  
+
+    Set-VMSwitch -Name $sw.Name -AllowManagementOS $true
+
+    Log "  已重新勾选，等网络恢复..."
+
+  
+
+    $dl = (Get-Date).AddSeconds($NetRecoverMax)
+
+    $ok = $false
+
+    while ((Get-Date) -lt $dl) {
+
+      $ip = @(Get-NetIPAddress -InterfaceAlias $vnic -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+
+              Where-Object { $_.IPAddress -notlike '169.254.*' })
+
+      if ($ip) { Log "  网络已恢复 IP: $($ip.IPAddress -join ',')"; $ok = $true; break }
+
+      Start-Sleep -Seconds 2
+
+    }
+
+    if (-not $ok) { Log "  警告：${NetRecoverMax}s 内没等到 IP" }
+
+  }
+
+  return $true
+
+}
+
+  
+
+Log "===== 流程启动 (轮询 ${PollSec}s / 晾 ${SettleSec}s / 保持 ${HoldSec}s) ====="
+
+  
+
+try {
+
+  $svc = Get-Service SharedAccess -ErrorAction Stop
+
+  if ($svc.StartType -eq 'Disabled') { Set-Service SharedAccess -StartupType Manual }
+
+  if ((Get-Service SharedAccess).Status -ne 'Running') {
+
+    Start-Service SharedAccess; Start-Sleep -Milliseconds 800
+
+  }
+
+  
+
+  Log "等待代理和 TUN 就绪(最长 ${WaitMax}s，每 ${PollSec}s 查一次)"
+
+  $deadline = (Get-Date).AddSeconds($WaitMax)
+
+  $ready = $false
+
+  while ((Get-Date) -lt $deadline) {
+
+    $proc = Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -match $ProcPattern }
+
+    if ($proc -and (Get-Conns $PublicNames).Count -gt 0) { $ready = $true; break }
+
+    Start-Sleep -Seconds $PollSec
+
+  }
+
+  if (-not $ready) { Log "超时：没等到代理和 TUN，撤了"; exit 0 }
+
+  Log "已就绪"
+
+  
+
+  Log "晾 ${SettleSec}s 再动手..."
+
+  Start-Sleep -Seconds $SettleSec
+
+  
+
+  # 第一步：Hyper-V 外部交换机（有就处理，没有就跳过）
+
+  if ($DoVSwitch) {
+
+    if (Reset-VSwitch) { Start-Sleep -Seconds $StepGapSec }
+
+  }
+
+  
+
+  # 第二步：ICS 开关
+
+  if ($DoIcs) {
+
+    $priv = Get-Conns $PrivateName
+
+    if ($priv.Count -eq 0) {
+
+      Log "警告：找不到专用侧连接 '$PrivateName'，跳过 ICS 步骤"
+
+    } else {
+
+      if (Clear-AllSharing) { Start-Sleep -Seconds 3 }
+
+  
+
+      $share = New-Object -ComObject HNetCfg.HNetShare
+
+      $pubList = Get-Conns $PublicNames
+
+      if ($pubList.Count -eq 0) {
+
+        Log "警告：找不到公用侧网卡，跳过 ICS 步骤"
+
+      } else {
+
+        $pub = $pubList[0]
+
+        # 顺序很关键：先公用侧(0)，再专用侧(1)
+
+        $cfgPub = $share.INetSharingConfigurationForINetConnection($pub.Conn)
+
+        $cfgPub.EnableSharing(0)
+
+        Log "已设公用侧: $($pub.Name)"
+
+        Start-Sleep -Seconds $StepGapSec
+
+  
+
+        $cfgPriv = $share.INetSharingConfigurationForINetConnection($priv[0].Conn)
+
+        $cfgPriv.EnableSharing(1)
+
+        Log "已设专用侧: $($priv[0].Name)"
+
+  
+
+        Log "保持 ${HoldSec}s..."
+
+        Start-Sleep -Seconds $HoldSec
+
+  
+
+        $cfgPriv.DisableSharing()
+
+        Log "已关闭专用侧: $($priv[0].Name)"
+
+        Start-Sleep -Seconds 1
+
+        $cfgPub.DisableSharing()
+
+        Log "已关闭公用侧: $($pub.Name)"
+
+      }
+
+    }
+
+  }
+
+  
+
+  Log "===== 完成 ====="
+
+}
+
+catch {
+
+  Log "错误: $($_.Exception.Message)"
+
+  try { [void](Clear-AllSharing); Log "已兜底清理" } catch { Log "兜底失败: $($_.Exception.Message)" }
+
+}
+
+'@ | Set-Content -Path $Worker -Encoding utf8
+
+  
+
+$psExe = "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe"
+
+$principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -LogonType ServiceAccount -RunLevel Highest
+
+$trigger = New-ScheduledTaskTrigger -AtStartup
+
+  
+
+$action = New-ScheduledTaskAction -Execute $psExe `
+
+  -Argument "-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$Worker`""
+
+  
+
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
+
+  -MultipleInstances IgnoreNew -StartWhenAvailable `
+
+  -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 2) `
+
+  -ExecutionTimeLimit (New-TimeSpan -Minutes 15)
+
+  
+
+Register-ScheduledTask -TaskName 'IcsToggle' -Action $action -Trigger $trigger `
+
+  -Principal $principal -Settings $settings `
+
+  -Description '开机后重置 Hyper-V 外部交换机共享 + 切换一次 ICS' -Force | Out-Null
+
+  
+
+Write-Host "`n[OK] 装好了（Hyper-V 版）" -ForegroundColor Green
+
+Write-Host "[i ] 流程：等代理就绪 → 重置 Hyper-V 外部交换机 → ICS 开关" -ForegroundColor Yellow
+
+Write-Host "[!] 注意：重置虚拟交换机会短暂断网，别在远程桌面里手动试跑" -ForegroundColor Red
+
+Get-Content "$Root\toggle.log" -Tail 20
+
+~~~
+
+  
+
+**注意这版装完不会自动试跑**，因为重置虚拟交换机会断网。要验证请直接重启：
+
+  
+
+~~~powershell
+
+shutdown /r /t 0
+
+~~~
+
+  
+
+开机后等代理起来，看日志：
+
+  
+
+~~~powershell
+
+Get-Content "$env:ProgramData\IcsToggle\toggle.log" -Tail 25
+
+~~~
+
+  
+
+期望看到这么一串：
+
+  
+
+~~~text
+
+处理虚拟交换机: 外部交换机
+
+  处理前 IP: 192.168.1.100 (来源: Dhcp)
+
+  已取消勾选
+
+  已重新勾选，等网络恢复...
+
+  网络已恢复 IP: 192.168.1.100
+
+已设公用侧: singbox
+
+已设专用侧: WLAN
+
+...
+
+===== 完成 =====
+
+~~~
+
+  
+
+### 三个要留意的地方
+
+  
+
+**这一步会断网，也会踢掉远程桌面**。`AllowManagementOS` 切换的本质是删掉主机侧的 `vEthernet` 再重建，期间主机完全离线，通常几秒到十几秒。开机时跑没问题（那会儿你还没连上来），但**你要是正通过 RDP 操作，千万别手动触发**——连接会当场断掉，问就是我试过。
+
+  
+
+**静态 IP 会丢**。虚拟网卡重建后走 DHCP 重新获取。脚本会在日志里记录处理前的 IP 和来源（`PrefixOrigin` 是 `Manual` 还是 `Dhcp`），跑完看一眼就知道有没有受影响。如果你确实配了静态 IP，得自己加一段保存并还原的逻辑。
+
+  
+
+**两步可以单独关掉**。实测发现只要第一步就够了的话，把 `$DoIcs` 改成 `$false`；哪天不用 Hyper-V 了，把 `$DoVSwitch` 改成 `$false`。不改也行，脚本会自动跳过不存在的部分，不报错。
+
+  
+
+多个外部交换机会全部处理。只想动某一个，把名字填进 `$VSwitchNames`，比如 `@('外部交换机')`。
+
+  
+
+### 教训
+
+  
+
+这算是第七次翻车了，而且是最容易被忽略的一种：**方案在 A 环境下验证通过，不代表它在 A+B 环境下还成立**。
+
+  
+
+Hyper-V 外部交换机改变的是"谁在承载主机流量"这个前提，而我整套方案都建立在"物理网卡直连"的假设上。假设变了，方案自然就空转了——脚本每一步都执行成功，日志一片绿，就是不解决问题。这种"看起来在工作实际没工作"的失效，比直接报错难查多了。
