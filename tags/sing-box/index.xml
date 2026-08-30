@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/"><channel><title>Sing-Box on SumiYune's Blog</title><link>https://blog.suyuri.com/tags/sing-box/</link><description>Recent content in Sing-Box on SumiYune's Blog</description><generator>Hugo -- 0.165.0</generator><language>zh-cn</language><lastBuildDate>Sun, 30 Aug 2026 19:00:00 +0800</lastBuildDate><atom:link href="https://blog.suyuri.com/tags/sing-box/index.xml" rel="self" type="application/rss+xml"/><item><title>一劳永逸解决 OPPO 互联和代理软件打架的问题</title><link>https://blog.suyuri.com/posts/%E4%B8%80%E5%8A%B3%E6%B0%B8%E9%80%B8%E8%A7%A3%E5%86%B3-oppo-%E4%BA%92%E8%81%94%E5%92%8C%E4%BB%A3%E7%90%86%E8%BD%AF%E4%BB%B6%E6%89%93%E6%9E%B6%E7%9A%84%E9%97%AE%E9%A2%98/</link><pubDate>Sun, 30 Aug 2026 19:00:00 +0800</pubDate><guid>https://blog.suyuri.com/posts/%E4%B8%80%E5%8A%B3%E6%B0%B8%E9%80%B8%E8%A7%A3%E5%86%B3-oppo-%E4%BA%92%E8%81%94%E5%92%8C%E4%BB%A3%E7%90%86%E8%BD%AF%E4%BB%B6%E6%89%93%E6%9E%B6%E7%9A%84%E9%97%AE%E9%A2%98/</guid><description>&lt;blockquote&gt;
+&lt;p&gt;两分钟解决，不用装脚本。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;hr&gt;
+&lt;h2 id="一症状"&gt;一、症状&lt;/h2&gt;
+&lt;p&gt;开了 sing-box 或者 mihomo 的 TUN 模式，同时装了 &lt;strong&gt;OPPO 互联（O+Connect）&lt;/strong&gt;，然后：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;连接数疯狂飙升，资源监视器里几千上万条莫名其妙的连接&lt;/li&gt;
+&lt;li&gt;风扇狂转，网络变卡&lt;/li&gt;
+&lt;li&gt;重启代理能好一会儿，过阵子又犯&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;网上流传的偏方是「给 TUN 网卡踢一脚」——在网络连接里把代理网卡的 Internet 连接共享开一下再关掉。有用，但治标不治本，每次开机都得来一遍。&lt;/p&gt;</description></item></channel></rss>
