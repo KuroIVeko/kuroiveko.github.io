@@ -1,0 +1,54 @@
+/* Claude 风格暖色配色：覆盖 PaperMod 的颜色变量，删掉本文件即恢复原样 */
+:root {
+    --accent: #d97757;
+    --theme: #faf9f5;
+    --entry: #f0eee6;
+    --primary: #141413;
+    --secondary: #6b6a65;
+    --tertiary: #e8e6dc;
+    --content: #141413;
+    --code-block-bg: #1f1e1d;
+    --code-bg: #f0eee6;
+    --border: #e8e6dc;
+}
+
+:root[data-theme="dark"] {
+    --theme: #262624;
+    --entry: #30302e;
+    --primary: #e8e6dc;
+    --secondary: #9c9a92;
+    --tertiary: #3e3e38;
+    --content: #e8e6dc;
+    --code-block-bg: #1f1e1d;
+    --code-bg: #30302e;
+    --border: #3e3e38;
+}
+
+/* 列表页与正文页统一底色 */
+.list {
+    background: var(--theme);
+}
+
+/* 陶土橙只用于链接与交互反馈 */
+.post-content a {
+    color: var(--accent);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.post-content a:hover {
+    box-shadow: 0 2px 0 var(--accent);
+}
+
+#menu a:hover,
+.breadcrumbs a:hover,
+.toc a:hover,
+.post-tags a:hover,
+.paginav a:hover .title,
+.footer a:hover,
+.entry-hint {
+    color: var(--accent);
+}
+
+::selection {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+}

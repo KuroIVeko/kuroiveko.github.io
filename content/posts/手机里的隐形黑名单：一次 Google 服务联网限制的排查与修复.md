@@ -80,7 +80,7 @@ map_oplus-netd_app_qcom_socket_uid_limit_map
 
 **第二个坑：要不要一直挂着轮询。** 一开始担心这张表会在手机运行期间被系统随时重新写入，所以模块设计成开机后一直后台常驻检查。但实测发现系统只在开机的那个时间点写一次，运行期间从不会再恢复。于是把常驻轮询去掉了，只在开机后的几分钟内高频检查一遍确保赶上系统写入的时机，然后就退出——不占用任何额外的后台资源。
 
-模块现在整个是开源的：[https://github.com/KuroIVeko/oplus-gms-ebpf-unlock](https://github.com/KuroIVeko/oplus-gms-ebpf-unlock)
+模块现在整个是开源的：[oplus-gms-ebpf-unlock](https://github.com/KuroIVeko/oplus-gms-ebpf-unlock)
 
 ## 写在最后
 
