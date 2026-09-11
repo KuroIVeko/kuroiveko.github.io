@@ -1,0 +1,5 @@
+{{- /* Claude 风格字体：拉丁字母自托管于 /static/fonts，中文走国内可访问的 Google Fonts 镜像（按 unicode-range 分片按需加载） */ -}}
+<link rel="preload" href="{{ "fonts/source-serif-4-latin-wght-normal.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
+<link rel="preconnect" href="https://fonts.loli.net">
+<link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+<link rel="stylesheet" href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500&display=swap">

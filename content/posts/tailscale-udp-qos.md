@@ -50,7 +50,10 @@ DestinationPrefix : 100.64.0.2/32
 
 ### 1. 普通 ping：小包也在丢
 ```text
-Ping statistics for 100.64.0.2:    Packets: Sent = 20, Received = 12, Lost = 8 (40% loss),Approximate round trip times in milli-seconds:    Minimum = 49ms, Maximum = 61ms, Average = 53ms
+Ping statistics for 100.64.0.2:
+    Packets: Sent = 20, Received = 12, Lost = 8 (40% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 49ms, Maximum = 61ms, Average = 53ms
 ```
 
 **32 字节的小包，丢了 40%。** 延迟倒是稳稳的 50ms 出头。
@@ -71,7 +74,10 @@ Ping statistics for 100.64.0.2:    Packets: Sent = 20, Received = 12, Lost = 8 (
 
 ### 3. ping 本地网关：本地链路很干净
 ```text
-Ping statistics for 192.168.31.1:    Packets: Sent = 20, Received = 20, Lost = 0 (0% loss),Approximate round trip times in milli-seconds:    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+Ping statistics for 192.168.31.1:
+    Packets: Sent = 20, Received = 20, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
 ```
 
 网卡计数器也看了，收发错误、丢弃全是 0，千兆全双工。本机和本地链路没毛病。
@@ -142,7 +148,14 @@ TS_DEBUG_ALWAYS_USE_DERP=true
 
 ```json
 {
-  "endpoints":      "type": "tailscale",      "tag": "tailscale-out",      "auth_key":your-auth-key>",      "control_url": "https://headscale.example.com",      "system_interface": true,      "listen_port": 443
+  "endpoints": [
+    {
+      "type": "tailscale",
+      "tag": "tailscale-out",
+      "auth_key": "<your-auth-key>",
+      "control_url": "https://headscale.example.com",
+      "system_interface": true,
+      "listen_port": 443
     }
   ]
 }
