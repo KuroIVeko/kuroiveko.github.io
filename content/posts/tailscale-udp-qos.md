@@ -29,6 +29,7 @@ InterfaceAlias AddressFamily NlMtu
 ```
 
 IPv6 是 1480，有点奇怪但不算离谱（大概率是路由器 RA 下发的）。为了排除干扰，直接把以太网的 MTU 临时砍到 1280：
+
 ```powershell
 netsh interface ipv4 set subinterface "以太网" mtu=1280 store=active
 netsh interface ipv6 set subinterface "以太网" mtu=1280 store=active
@@ -41,6 +42,7 @@ netsh interface ipv6 set subinterface "以太网" mtu=1280 store=active
 ## 用数据说话：到底是不是 MTU 的锅
 
 先确认到 `nas` 的流量走哪张网卡：
+
 ```text
 InterfaceAlias    : tailscale0
 DestinationPrefix : 100.64.0.2/32
@@ -49,8 +51,12 @@ DestinationPrefix : 100.64.0.2/32
 走的是 `tailscale0` 隧道，意料之中。然后做了三组测试。
 
 ### 1. 普通 ping：小包也在丢
+
 ```text
-Ping statistics for 100.64.0.2:    Packets: Sent = 20, Received = 12, Lost = 8 (40% loss),Approximate round trip times in milli-seconds:    Minimum = 49ms, Maximum = 61ms, Average = 53ms
+Ping statistics for 100.64.0.2:
+    Packets: Sent = 20, Received = 12, Lost = 8 (40% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 49ms, Maximum = 61ms, Average = 53ms
 ```
 
 **32 字节的小包，丢了 40%。** 延迟倒是稳稳的 50ms 出头。
@@ -60,6 +66,7 @@ Ping statistics for 100.64.0.2:    Packets: Sent = 20, Received = 12, Lost = 8 (
 ### 2. 带 DF 标志的 ping：分片行为正常
 
 用 `ping -f -l <size>` 逐步加大包长：
+
 ```text
 1000 => Reply from 100.64.0.2: bytes=1000 time=51ms TTL=128
 1150 => Reply from 100.64.0.2: bytes=1150 time=52ms TTL=128
@@ -70,8 +77,12 @@ Ping statistics for 100.64.0.2:    Packets: Sent = 20, Received = 12, Lost = 8 (
 大包在本机就直接报 "needs to be fragmented"，而不是发出去以后石沉大海。这说明路径 MTU 发现是正常工作的，TCP 会自己把 MSS 调小，不会出现"连接建立了但传数据就卡死"的 PMTU 黑洞。
 
 ### 3. ping 本地网关：本地链路很干净
+
 ```text
-Ping statistics for 192.168.31.1:    Packets: Sent = 20, Received = 20, Lost = 0 (0% loss),Approximate round trip times in milli-seconds:    Minimum = 0ms, Maximum = 1ms, Average = 0ms
+Ping statistics for 192.168.31.1:
+    Packets: Sent = 20, Received = 20, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 0ms, Maximum = 1ms, Average = 0ms
 ```
 
 网卡计数器也看了，收发错误、丢弃全是 0，千兆全双工。本机和本地链路没毛病。
@@ -79,6 +90,7 @@ Ping statistics for 192.168.31.1:    Packets: Sent = 20, Received = 20, Lost = 0
 ### 丢包长什么样
 
 每 0.5 秒 ping 一次，1000 字节，连续 60 次，`.` 是成功、`X` 是丢包：
+
 ```text
 ..XX......X....X..XXXX..XX.X..X..X.X....X.X..X.....X.X.X.XXX
 ```
@@ -114,6 +126,7 @@ MTU 改回去，换个方向查。
 ### 自建 DERP + 强制中继
 
 Tailscale 体系里唯一原生的 TCP 通道就是 DERP 中继（走 HTTPS/443）。在国内 VPS 上自建 `derper`，加到 Headscale 的 DERP map 里，然后在客户端设置环境变量：
+
 ```bash
 TS_DEBUG_ALWAYS_USE_DERP=true
 ```
@@ -142,7 +155,14 @@ TS_DEBUG_ALWAYS_USE_DERP=true
 
 ```json
 {
-  "endpoints":      "type": "tailscale",      "tag": "tailscale-out",      "auth_key":your-auth-key>",      "control_url": "https://headscale.example.com",      "system_interface": true,      "listen_port": 443
+  "endpoints": [
+    {
+      "type": "tailscale",
+      "tag": "tailscale-out",
+      "auth_key": "<your-auth-key>",
+      "control_url": "https://headscale.example.com",
+      "system_interface": true,
+      "listen_port": 443
     }
   ]
 }

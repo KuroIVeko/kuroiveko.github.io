@@ -16,8 +16,10 @@ draft: false
 ## 第一个插曲：设计没问题，但撞上了没有 IPv6 出口的网络
 
 先从最容易查的地方下手。翻出 sing-box 的运行日志，里面躺着一堆报错：
+
 ```text
-ERROR connection: connection download closed: remote error:dial tcp [2607:f8b0:443: connect: network is unreachable
+ERROR connection: connection download closed: remote error:
+dial tcp [2607:f8b0:...]:443: connect: network is unreachable
 ```
 
 再看路由配置，一条叫 `googlefcm` 的规则集被我设成了"直连"——这不是我配错了，是故意的：这条规则的域名走的是我自己在 Cloudflare Worker 上部署的一个专供 FCM 用的 DNS，只解析返回国内可直连的 IP，本意就是让谷歌推送服务不用绕代理，省点电和流量。
@@ -45,6 +47,7 @@ ERROR connection: connection download closed: remote error:dial tcp [2607:f8b0:4
 Linux 内核有个叫 eBPF 的东西，可以在内核态挂一段小程序，在网络包甚至 socket 创建的那一刻就做判断——比 iptables 这种传统防火墙规则更底层、更早介入。而且这类程序可以把自己的数据结构"钉"（pin）在文件系统的一个特殊路径下，方便管理，但普通的排查工具完全不知道要去看这里。
 
 抱着"死马当活马医"的心态翻了一下 `/sys/fs/bpf/` 这个路径，发现一堆厂商自定义的东西，其中几个名字很扎眼：
+
 ```text
 map_oplus-netd_app_wlan_socket_uid_limit_map
 map_oplus-netd_app_qcom_socket_uid_limit_map

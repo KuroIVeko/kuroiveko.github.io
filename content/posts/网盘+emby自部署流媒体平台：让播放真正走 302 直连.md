@@ -24,6 +24,7 @@ categories:
 |**Emby**|门面。刮削、海报墙、播放进度、多端同步，用户看到的一切|
 |**OpenList**（AList 的分支）|把网盘转成一个标准的 WebDAV 接口|
 |**rclone**|把这个 WebDAV 挂载成服务器上的一个「本地目录」，好让 Emby 能读|
+
 ```text
 网盘 → OpenList(AList) → rclone(FUSE 挂载) → Emby → 客户端
 ```
@@ -172,12 +173,17 @@ tar -xzvf ./emby2Alist.tar.gz -C ~/emby2Alist
 ```
 
 ### 2. docker-compose.yml
+
 ```yaml
-services:  nginx-emby:    image: nginx:1.29
+services:
+  nginx-emby:
+    image: nginx:1.29
     container_name: nginx-emby
     restart: always
-    ports:      - 8091:80
-    volumes:      - ./nginx/conf.d:/etc/nginx/conf.d
+    ports:
+      - 8091:80
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/log:/var/log/nginx
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./embyCache:/var/cache/nginx/emby
@@ -188,13 +194,20 @@ services:  nginx-emby:    image: nginx:1.29
 早期教程说「只改 constant.js」，但新版把配置按功能拆到了 `config/` 目录下，`constant.js` 顶部全是 import。你会在里面找不到填 OpenList 地址的地方，别怀疑人生。
 
 **① `conf.d/constant.js`**
+
 ```javascript
-const embyHost = "http://172.17.0.1:8096";const embyApiKey = "在 Emby 后台生成的 API Key";const mediaMountPath = ["/media"];   // 见下面「坑一」，这行最容易错
+const embyHost = "http://172.17.0.1:8096";
+const embyApiKey = "在 Emby 后台生成的 API Key";
+const mediaMountPath = ["/media"];   // 见下面「坑一」，这行最容易错
 ```
 
 **② `conf.d/config/constant-mount.js`**
+
 ```javascript
-const alistAddr = "http://172.17.0.1:5244";const alistToken = "OpenList 后台 → 设置 → 其他 → 令牌";
+const alistAddr = "http://172.17.0.1:5244";
+const alistToken = "OpenList 后台 → 设置 → 其他 → 令牌";
+```
+
 **③ `conf.d/config/constant-pro.js`**
 
 这个文件几百行，第一次打开像看天书，全是各种高级路由规则。**别慌，99% 的内容都不用碰：**
@@ -206,10 +219,14 @@ const alistAddr = "http://172.17.0.1:5244";const alistToken = "OpenList 后台 �
 |`routeRule`|按码率/分辨率/设备/用户做精细分流|**千万别碰**，保持注释|
 |`mediaPathMapping`|**路径翻译，唯一必改项**|**必改**|
 |`alistRawUrlMapping`|对 OpenList 返回的直链再替换一次（套 CDN 才用）|不用改|
+
 ```javascript
 const mediaPathMapping = [
   // [替换方式, 路径类型, 旧路径, OpenList 里的虚拟路径]
   [0, 0, "/quarktv", "/ali"],
+];
+```
+
 （第一个 `0` = 做一次字符串 replace；第二个 `0` = 只处理本地物理路径。）
 
 ### 4. Emby 里必须做的设置
@@ -232,6 +249,7 @@ const mediaPathMapping = [
 我的 rclone 挂载点在宿主机上是 `/mnt/webdav/ali`，所以我理所当然地把 `mediaMountPath` 填成了 `["/mnt"]`。
 
 结果一直返回 206（也就是没走直链）。翻日志才看到真相：
+
 ```text
 js: mount emby file path: /media/quarktv/music/xxx.flac
 js: hit proxy, localFile not mountPath first: ["/mnt"]
@@ -245,6 +263,7 @@ js: use original link
 > **一句话记住：`mediaMountPath` 要填的是 Emby 容器内部看到的路径前缀，不是你 `ls` 时看到的宿主机路径。**
 
 不确定的时候别猜，直接问 Emby：
+
 ```bash
 curl "http://你的EmbyIP:8096/Items?Ids=项目ID&Fields=Path&api_key=你的KEY"
 ```
@@ -288,6 +307,7 @@ Emby API 返回:   /media/quarktv/music/song.flac
 排错时我发现 `docker logs -f nginx-emby` 只有启动信息，一条业务日志都没有。
 
 **因为 compose 里把 `./nginx/log` 挂到了容器的 `/var/log/nginx`，把官方镜像里原本指向 stdout 的软链接顶掉了。** 日志全写进宿主机的实体文件了：
+
 ```bash
 tail -f ~/emby2Alist/nginx/log/error.log
 ```

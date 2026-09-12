@@ -39,6 +39,7 @@ categories:
 Get-PnpDevice -Class Net | Where-Object InstanceId -like 'SWD\WINTUN\*' |
   Select-Object FriendlyName, InstanceId, Status
 ```
+
 ```text
 FriendlyName              InstanceId                                        Status
 ------------              ----------                                        ------
@@ -63,6 +64,7 @@ sing-tun Tunnel           SWD\WINTUN\{A8603457-C603-7694-FC37-1851837DFCEE} OK
 1. `Win + R` 输入 `services.msc`
 2. 找到 **`O+Connect Service`**
 3. 双击 → 启动类型改成 **手动** → 停止 → 确定
+
 ```powershell
 # 命令行版本，管理员 PowerShell
 Set-Service -Name 'O+Connect Service' -StartupType Manual
@@ -89,6 +91,7 @@ Stop-Service -Name 'O+Connect Service' -Force
 ### 收尾：清掉已经装上的那块
 
 如果现在设备管理器里还有 `vgate0`，删掉：
+
 ```powershell
 # 管理员 PowerShell，把 GUID 换成你自己查到的
 pnputil /remove-device "SWD\WINTUN\{EA35E09C-F10B-4A63-AFB0-7790F64CEB7F}"
