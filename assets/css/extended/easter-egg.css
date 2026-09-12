@@ -9,3 +9,8 @@
     background-image: none;
     cursor: default;
 }
+
+/* the single accented character */
+.home-info .entry-content a .accent-char {
+    color: var(--accent);
+}
