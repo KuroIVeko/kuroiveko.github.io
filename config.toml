@@ -18,8 +18,8 @@ timeZone = "Asia/Shanghai"
 # --- 详细参数配置 ---
 [params]
     env = "production"
-    description = "SumiYune 的技术折腾笔记"
-    author = "SumiYune"
+    description = "Sumi Yune 的技术折腾笔记"
+    author = "Sumi Yune"
     
     # 默认主题模式 (auto/dark/light)
     defaultTheme = "auto"
