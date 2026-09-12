@@ -1,0 +1,11 @@
+/* home-info easter egg: link styled as plain text */
+.home-info .entry-content a,
+.home-info .entry-content a:hover,
+.home-info .entry-content a:visited {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: none;
+    box-shadow: none;
+    background-image: none;
+    cursor: default;
+}

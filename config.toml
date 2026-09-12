@@ -50,7 +50,7 @@ timeZone = "Asia/Shanghai"
     # --- 个人主页模式 (Profile Mode) ---
     [params.homeInfoParams]
         Title = "陌生人，祝你早安，午安，晚安。"
-        Content = "欢迎来到我的技术小屋，这里记录我的折腾日常。"
+        Content = "[無機質世界に彩を](https://163cn.tv/bgevOlVs)"
 
     # --- 社交链接 (显示在头像下方) ---
     [[params.socialIcons]]
