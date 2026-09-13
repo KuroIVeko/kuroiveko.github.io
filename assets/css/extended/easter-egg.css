@@ -1,16 +1,12 @@
-/* home-info easter egg: link styled as plain text */
-.home-info .entry-content a,
-.home-info .entry-content a:hover,
-.home-info .entry-content a:visited {
-    color: inherit;
+/* home-info easter egg: only the accented character is a link, styled as plain text */
+.home-info .entry-content a.accent-char,
+.home-info .entry-content a.accent-char:hover,
+.home-info .entry-content a.accent-char:visited,
+.home-info .entry-content a.accent-char:active {
+    color: var(--accent);
     text-decoration: none;
     border-bottom: none;
     box-shadow: none;
     background-image: none;
     cursor: default;
-}
-
-/* the single accented character */
-.home-info .entry-content a .accent-char {
-    color: var(--accent);
 }
