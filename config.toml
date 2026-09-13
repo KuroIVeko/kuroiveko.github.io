@@ -50,6 +50,8 @@ timeZone = "Asia/Shanghai"
     # --- 个人主页模式 (Profile Mode) ---
     [params.homeInfoParams]
         Title = "陌生人，祝你早安，午安，晚安。"
+        # 注意：下面的 Content 已被 layouts/partials/home_info.html 覆盖，改本行不会生效。
+        # 首页彩蛋文案与链接请直接修改那个模板文件。
         Content = "[無機質世界に彩を](https://163cn.tv/bgevOlVs)"
 
     # --- 社交链接 (显示在头像下方) ---
