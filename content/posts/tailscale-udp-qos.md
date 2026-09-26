@@ -1,10 +1,17 @@
 ---
-title: "异地组网突然卡成 PPT：一次被运营商 UDP QoS 误伤的排查记录"
+title: 异地组网突然卡成 PPT：一次被运营商 UDP QoS 误伤的排查记录
 date: 2026-09-11T20:00:00+08:00
-draft: false
-tags: ["Tailscale", "Headscale", "sing-box", "网络", "QoS", "踩坑"]
-categories: ["折腾"]
-summary: "Headscale + Tailscale 组网用得好好的，某天突然卡到无法忍受。怀疑过 MTU，最后发现是运营商的 UDP QoS——而解决办法只有一行配置。"
+draft: true
+tags:
+  - Tailscale
+  - Headscale
+  - sing-box
+  - 网络
+  - QoS
+  - 踩坑
+categories:
+  - 折腾
+summary: Headscale + Tailscale 组网用得好好的，某天突然卡到无法忍受。怀疑过 MTU，最后发现是运营商的 UDP QoS——而解决办法只有一行配置。
 ---
 
 ## 起因：用得好好的，突然就卡了
